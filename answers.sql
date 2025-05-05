@@ -1,87 +1,39 @@
-# Task 1: Load and Explore the Dataset
+-- 1. First, create a normalized table
+CREATE TABLE ProductDetail_1NF (
+    OrderID INT,
+    CustomerName VARCHAR(100),
+    Product VARCHAR(100)
+);
 
-import pandas as pd
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn.datasets import load_iris
+-- 2. Then, insert normalized data
+INSERT INTO ProductDetail_1NF (OrderID, CustomerName, Product)
+SELECT
+    OrderID,
+    CustomerName,
+    TRIM(value) AS Product
+FROM (
+    SELECT 
+        OrderID,
+        CustomerName,CREATE TABLE OrderItems (
+    OrderID INT,
+    Product VARCHAR(100),
+    Quantity INT,
+    PRIMARY KEY (OrderID, Product),
+    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID)
+);
 
-# Load dataset
-try:
-    iris_raw = load_iris(as_frame=True)
-    df = iris_raw.frame
-    print("Dataset loaded successfully!\n")
-except Exception as e:
-    print(f"Error loading dataset: {e}")
+INSERT INTO OrderItems (OrderID, Product, Quantity)
+SELECT OrderID, Product, Quantity
+FROM OrderDetails;
 
-# Display first few rows
-print("First 5 rows of the dataset:")
-print(df.head(), "\n")
+        STRING_SPLIT(Products, ',') AS value
+    FROM ProductDetail
+) AS SplitProducts;
+CREATE TABLE Orders (
+    OrderID INT PRIMARY KEY,
+    CustomerName VARCHAR(100)
+);
 
-# Data structure and missing values
-print("Dataset Info:")
-print(df.info(), "\n")
-
-print("Missing Values:")
-print(df.isnull().sum(), "\n")
-
-# Clean dataset (no missing values in Iris, but here's how you would handle it)
-# df.dropna(inplace=True)  # or df.fillna(method='ffill', inplace=True)
-
-# Task 2: Basic Data Analysis
-
-# Basic statistics
-print("Descriptive Statistics:")
-print(df.describe(), "\n")
-
-# Grouping: Mean of each measurement per species
-grouped = df.groupby('target').mean()
-print("Mean values grouped by species (target):")
-print(grouped, "\n")
-
-# Map target numbers to species names for readability
-df['species'] = df['target'].map(dict(zip(range(3), iris_raw.target_names)))
-
-# Identify interesting patterns (e.g., which species has longest petals?)
-longest_petal_species = df.groupby('species')['petal length (cm)'].mean().idxmax()
-print(f"The species with the longest average petal length is: {longest_petal_species}\n")
-
-# Task 3: Data Visualization
-
-# 1. Line chart: Simulate time series using index
-plt.figure(figsize=(10, 4))
-plt.plot(df.index, df['sepal length (cm)'], label='Sepal Length')
-plt.title('Sepal Length Trend Over Index (Simulated Time)')
-plt.xlabel('Index')
-plt.ylabel('Sepal Length (cm)')
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-# 2. Bar chart: Average petal length per species
-plt.figure(figsize=(6, 4))
-sns.barplot(x='species', y='petal length (cm)', data=df)
-plt.title('Average Petal Length per Species')
-plt.xlabel('Species')
-plt.ylabel('Petal Length (cm)')
-plt.tight_layout()
-plt.show()
-
-# 3. Histogram: Distribution of sepal width
-plt.figure(figsize=(6, 4))
-plt.hist(df['sepal width (cm)'], bins=15, color='skyblue', edgecolor='black')
-plt.title('Distribution of Sepal Width')
-plt.xlabel('Sepal Width (cm)')
-plt.ylabel('Frequency')
-plt.tight_layout()
-plt.show()
-
-# 4. Scatter plot: Sepal length vs petal length
-plt.figure(figsize=(6, 4))
-sns.scatterplot(x='sepal length (cm)', y='petal length (cm)', hue='species', data=df)
-plt.title('Sepal Length vs Petal Length')
-plt.xlabel('Sepal Length (cm)')
-plt.ylabel('Petal Length (cm)')
-plt.tight_layout()
-plt.show()
+INSERT INTO Orders (OrderID, CustomerName)
+SELECT DISTINCT OrderID, CustomerName
+FROM OrderDetails;
